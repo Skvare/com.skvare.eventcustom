@@ -198,3 +198,88 @@ function _eventcustom_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentI
     }
   }
 }
+
+/**
+ * (Delegated) Implements hook_civicrm_managed().
+ *
+ * Find any *.mgd.php files, merge their content, and return.
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed
+ */
+function _eventcustom_civix_civicrm_managed(&$entities) {
+  $mgdFiles = _eventcustom_civix_find_files(__DIR__, '*.mgd.php');
+  sort($mgdFiles);
+  foreach ($mgdFiles as $file) {
+    $es = include $file;
+    foreach ($es as $e) {
+      if (empty($e['module'])) {
+        $e['module'] = E::LONG_NAME;
+      }
+      if (empty($e['params']['version'])) {
+        $e['params']['version'] = '3';
+      }
+      $entities[] = $e;
+    }
+  }
+}
+
+/**
+ * Search directory tree for files which match a glob pattern.
+ *
+ * Note: Dot-directories (like "..", ".git", or ".svn") will be ignored.
+ * Note: In Civi 4.3+, delegate to CRM_Utils_File::findFiles()
+ *
+ * @param string $dir base dir
+ * @param string $pattern , glob pattern, eg "*.txt"
+ *
+ * @return array
+ */
+function _eventcustom_civix_find_files($dir, $pattern) {
+  if (is_callable(['CRM_Utils_File', 'findFiles'])) {
+    return CRM_Utils_File::findFiles($dir, $pattern);
+  }
+
+  $todos = [$dir];
+  $result = [];
+  while (!empty($todos)) {
+    $subdir = array_shift($todos);
+    foreach (_eventcustom_civix_glob("$subdir/$pattern") as $match) {
+      if (!is_dir($match)) {
+        $result[] = $match;
+      }
+    }
+    if ($dh = opendir($subdir)) {
+      while (FALSE !== ($entry = readdir($dh))) {
+        $path = $subdir . DIRECTORY_SEPARATOR . $entry;
+        if ($entry[0] == '.') {
+        }
+        elseif (is_dir($path)) {
+          $todos[] = $path;
+        }
+      }
+      closedir($dh);
+    }
+  }
+  return $result;
+}
+
+
+
+/**
+ * Glob wrapper which is guaranteed to return an array.
+ *
+ * The documentation for glob() says, "On some systems it is impossible to
+ * distinguish between empty match and an error." Anecdotally, the return
+ * result for an empty match is sometimes array() and sometimes FALSE.
+ * This wrapper provides consistency.
+ *
+ * @link http://php.net/glob
+ * @param string $pattern
+ *
+ * @return array
+ */
+function _eventcustom_civix_glob($pattern) {
+  $result = glob($pattern);
+  return is_array($result) ? $result : [];
+}
+
