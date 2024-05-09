@@ -42,7 +42,7 @@ function eventcustom_civicrm_enable(): void {
 function eventcustom_civicrm_managed(&$entities) {
   _eventcustom_civix_civicrm_managed($entities);
   $entities[] = [
-    'module' => 'eventcustom',
+    'module' => 'com.skvare.eventcustom',
     'name' => 'eventcustom_cg_registration',
     'entity' => 'CustomGroup',
     'update' => 'never',
@@ -59,7 +59,7 @@ function eventcustom_civicrm_managed(&$entities) {
     ],
   ];
   $entities[] = [
-    'module' => 'eventcustom',
+    'module' => 'com.skvare.eventcustom',
     'name' => 'eventcustom_cg_setting',
     'entity' => 'CustomField',
     'update' => 'never',
@@ -76,7 +76,7 @@ function eventcustom_civicrm_managed(&$entities) {
     ],
   ];
   $entities[] = [
-    'module' => 'eventcustom',
+    'module' => 'com.skvare.eventcustom',
     'name' => 'eventcustom_cf_relationship_types',
     'entity' => 'CustomField',
     'update' => 'never',
@@ -99,7 +99,7 @@ function eventcustom_civicrm_managed(&$entities) {
 
 
   $entities[] = [
-    'module' => 'eventcustom',
+    'module' => 'com.skvare.eventcustom',
     'name' => 'eventcustom_cg_primary_contact_register',
     'entity' => 'CustomField',
     'update' => 'never',
