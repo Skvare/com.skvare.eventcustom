@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <extension key="com.skvare.eventcustom" type="module">
   <file>eventcustom</file>
-  <name>com.skvare.eventcustom</name>
-  <description>FIXME</description>
+  <name>Event Custom Flow</name>
+  <description>Event Custom Flow</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>Sunil Pawar</author>
     <email>sunil@skvare.com</email>
   </maintainer>
   <urls>
-    <url desc="Main Extension Page">http://FIXME</url>
-    <url desc="Documentation">http://FIXME</url>
-    <url desc="Support">http://FIXME</url>
+    <url desc="Main Extension Page">https://github.com/Skvare/com.skvare.eventcustom</url>
+    <url desc="Documentation">https://github.com/Skvare/com.skvare.eventcustom</url>
+    <url desc="Support">https://github.com/Skvare/com.skvare.eventcustom</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
   <releaseDate>2024-05-07</releaseDate>
