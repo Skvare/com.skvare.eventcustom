@@ -122,11 +122,13 @@ function eventcustom_civicrm_buildForm($formName, &$form) {
     $customFields = CRM_Eventcustom_Utils::getCustomFields();
     $customFieldForRel = $customFields['eventcustom_cf_relationship_types']['custom_n'];
     if (array_key_exists($customFieldForRel, $form->_elementIndex)) {
-      $form->removeElement($customFieldForRel);
+      //$form->removeElement($customFieldForRel);
     }
-    $form->add('select', $customFieldForRel, 'Relationship type',
+    /*
+    $form->add('select', $customFieldForRel, 'Relationship Type',
       CRM_Eventcustom_Utils::relationshipTypes(),
-      TRUE, ['class' => 'crm-select2', 'multiple' => 'multiple', 'placeholder' => ts('- any -')]);
+      false, ['class' => 'crm-select2', 'multiple' => 'multiple', 'placeholder' => ts('- any -')]);
+    */
   }
   elseif ($formName == 'CRM_Event_Form_Registration_Register') {
     $eid = $form->getVar('_eventId');
@@ -146,7 +148,7 @@ function eventcustom_civicrm_buildForm($formName, &$form) {
           $attribute = ['class' => 'currentUser'];
         }
         $element = $form->add('checkbox', "contacts_parent_{$contactID}",
-          $contact['display_name'], NULL, FALSE, $attribute);
+          $contact['display_name'], $attribute, FALSE, $attribute);
         if ($isPaid && !$contact['skip_registration'] && $contactID == $currentContactID) {
           $setDefaultForParent = ["contacts_parent_{$contactID}" => 1];
           $form->setDefaults($setDefaultForParent);
@@ -164,66 +166,67 @@ function eventcustom_civicrm_buildForm($formName, &$form) {
     if (CRM_Utils_System::isUserLoggedIn()) {
       CRM_Core_Region::instance('page-body')->add(['template' => 'CRM/Eventcustom/ContactListing.tpl']);
     }
-    elseif ($formName == 'CRM_Event_Form_Registration_AdditionalParticipant') {
-      $eid = $form->getVar('_eventId');
-      $customFields = CRM_Eventcustom_Utils::getCustomFields();
-      $eventCustomDetails = CRM_Eventcustom_Utils::getEventDetails($eid, $customFields);
-      if (empty($eventCustomDetails[$customFields['eventcustom_cg_setting']['custom_n']])) {
-        return;
-      }
+  }
+  elseif ($formName == 'CRM_Event_Form_Registration_AdditionalParticipant') {
+    $eid = $form->getVar('_eventId');
+    $customFields = CRM_Eventcustom_Utils::getCustomFields();
+    $eventCustomDetails = CRM_Eventcustom_Utils::getEventDetails($eid, $customFields);
+    if (empty($eventCustomDetails[$customFields['eventcustom_cg_setting']['custom_n']])) {
+      return;
+    }
 
-      if (!$form->_values['event']['is_monetary']) {
-        [$finalContactList, $childContacts, $parentContacts] = CRM_Eventcustom_Utils::contactSequenceForRegistration($form);
-        [$dontCare, $additionalPageNumber] = explode('_', $form->getVar('_name'));
-        $contactID = $finalContactList[$additionalPageNumber];
-        $childNumber = 0;
-        if (in_array($contactID, $childContacts)) {
-          $childNumber = CRM_Utils_Array::key($contactID, $childContacts);
-        }
-        $_params = $form->get('params');
-        $_name = $form->getVar('_name');
-        $participantNo = substr($_name, 12);
-        $participantCnt = $participantNo;
-        $participantTot = $_params[0]['additional_participants'];
-        CRM_Utils_System::setTitle(ts('Register Child %1 of %2', [1 => $participantCnt, 2 => $participantTot]));
-      }
+    if (!$form->_values['event']['is_monetary']) {
       [$finalContactList, $childContacts, $parentContacts] = CRM_Eventcustom_Utils::contactSequenceForRegistration($form);
       [$dontCare, $additionalPageNumber] = explode('_', $form->getVar('_name'));
       $contactID = $finalContactList[$additionalPageNumber];
-      $data = CRM_Eventcustom_Utils::getContactData(array_keys($form->_fields), $contactID);
-      $form->setDefaults($data);
-    }
-    elseif (in_array($formName, ['CRM_Event_Form_Registration_Confirm', 'CRM_Event_Form_Registration_ThankYou'])) {
-      $eid = $form->getVar('_eventId');
-      $customFields = CRM_Eventcustom_Utils::getCustomFields();
-      $eventCustomDetails = CRM_Eventcustom_Utils::getEventDetails($eid, $customFields);
-      if (empty($eventCustomDetails[$customFields['eventcustom_cg_setting']['custom_n']])) {
-        return;
+      $childNumber = 0;
+      if (in_array($contactID, $childContacts)) {
+        $childNumber = CRM_Utils_Array::key($contactID, $childContacts);
       }
-      $parentCanRegister = CRM_Eventcustom_Utils::getEventDetails($eid, $customFields);
-      $canParentRegister = $parentCanRegister[$customFields['eventcustom_cg_primary_contact_register']['custom_n']];
-      if ($formName == 'CRM_Event_Form_Registration_ThankYou') {
-        $eid = $form->getVar('_eventId');
-        if (!empty($canParentRegister)) {
-          if ($form->getVar('_participantId')) {
-            $result = civicrm_api3('ParticipantStatusType', 'getvalue', [
-              'return' => "id",
-              'name' => "not_attending",
-            ]);
-            CRM_Core_DAO::setFieldValue('CRM_Event_DAO_Participant', $form->getVar('_participantId'), 'status_id', $result);
-          }
+      $_params = $form->get('params');
+      $_name = $form->getVar('_name');
+      $participantNo = substr($_name, 12);
+      $participantCnt = $participantNo;
+      $participantTot = $_params[0]['additional_participants'];
+      CRM_Utils_System::setTitle(ts('Register Child %1 of %2', [1 => $participantCnt, 2 => $participantTot]));
+    }
+    [$finalContactList, $childContacts, $parentContacts] = CRM_Eventcustom_Utils::contactSequenceForRegistration($form);
+    [$dontCare, $additionalPageNumber] = explode('_', $form->getVar('_name'));
+    $contactID = $finalContactList[$additionalPageNumber];
+    $data = CRM_Eventcustom_Utils::getContactData(array_keys($form->_fields), $contactID);
+    $form->setDefaults($data);
+  }
+  elseif (in_array($formName, ['CRM_Event_Form_Registration_Confirm', 'CRM_Event_Form_Registration_ThankYou'])) {
+    $eid = $form->getVar('_eventId');
+    $customFields = CRM_Eventcustom_Utils::getCustomFields();
+    $eventCustomDetails = CRM_Eventcustom_Utils::getEventDetails($eid, $customFields);
+    if (empty($eventCustomDetails[$customFields['eventcustom_cg_setting']['custom_n']])) {
+      return;
+    }
+    $parentCanRegister = CRM_Eventcustom_Utils::getEventDetails($eid, $customFields);
+    $canParentRegister = $parentCanRegister[$customFields['eventcustom_cg_primary_contact_register']['custom_n']];
+    if ($formName == 'CRM_Event_Form_Registration_ThankYou') {
+      $eid = $form->getVar('_eventId');
+      if (empty($canParentRegister)) {
+        if ($form->getVar('_participantId')) {
+          $result = civicrm_api3('ParticipantStatusType', 'getvalue', [
+            'return' => "id",
+            'name' => "not_attending",
+          ]);
+          CRM_Core_DAO::setFieldValue('CRM_Event_DAO_Participant', $form->getVar('_participantId'), 'status_id', $result);
         }
       }
+    }
 
-      $params = $form->getVar('_params');
-      // To avoid confusion, changing removing parent name as first participant
-      // and changing the labels too.
-      if (!$canParentRegister) {
-        $template = CRM_Core_Smarty::singleton();
-        $part = $template->get_template_vars('part');
-        $part[0]['info'] = ' ( Parent will be register as Non Attending Participant.)';
-        $template->assign('part', $part);
-      }
+    $params = $form->getVar('_params');
+    // To avoid confusion, changing removing parent name as first participant
+    // and changing the labels too.
+    if (!$canParentRegister) {
+      $template = CRM_Core_Smarty::singleton();
+      $part = $template->get_template_vars('part');
+      echo '<pre>'; print_r($part); echo '</pre>';
+      $part[0]['info'] .= ' ( Parent will be register as Non Attending Participant.)';
+      $template->assign('part', $part);
     }
   }
 }
@@ -249,7 +252,13 @@ function eventcustom_civicrm_buildAmount($pageType, &$form, &$amounts) {
     $currentContactID = $form->getLoggedInUserContactID();
     $parents_can_register = $eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']];
     if (!$parents_can_register) {
+      $form->assign('hide_price_field', TRUE);
       $amount = 0;
+    }
+    else {
+      $form->assign('show_price_field', FALSE);
+
+      return;
     }
     $psid = $form->get('priceSetId');
     $getPriceSetsInfo = CRM_Eventcustom_Utils::getPriceSetsInfo($psid);
@@ -263,12 +272,12 @@ function eventcustom_civicrm_buildAmount($pageType, &$form, &$amounts) {
         if (array_key_exists($option_id, $getPriceSetsInfo)) {
           if ($formName == 'CRM_Event_Form_Registration_Register' &&
             !$parents_can_register) {
-            $option['amount']  = 0;
+            $option['amount'] = 0;
           }
           elseif ($formName == 'CRM_Event_Form_Registration_Register' &&
             !empty($form->_submitValues) &&
             empty($form->_submitValues['contacts_parent_' . $currentContactID])) {
-            $option['amount']  = 0;
+            $option['amount'] = 0;
           }
 
           // Re-calculate VAT/Sales TAX on discounted amount.
@@ -286,19 +295,43 @@ function eventcustom_civicrm_buildAmount($pageType, &$form, &$amounts) {
   }
 }
 
-function eventinvite_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-  if (in_array($formName, ['CRM_Event_Form_Registration_Register'])) {
+function eventcustom_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if (in_array($formName, ['CRM_Event_Form_Registration_Register', 'CRM_Event_Form_Registration_Confirm'])) {
     $eid = $form->getVar('_eventId');
     $customFields = CRM_Eventcustom_Utils::getCustomFields();
     $eventCustomDetails = CRM_Eventcustom_Utils::getEventDetails($eid, $customFields);
     if (empty($eventCustomDetails[$customFields['eventcustom_cg_setting']['custom_n']])) {
       return;
     }
-    if (empty($eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']])) {
-      return;
+    //if (empty($fields['target_contact_id'])) {
+    if (!empty($eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']])) {
+      // return;
+    }
+    $childContacts = $parentContact = [];
+    foreach ($fields as $k => $v) {
+      if (strpos($k, 'contacts_child_') === 0) {
+        [, , $cid] = explode('_', $k);
+        $childContacts[$cid] = $cid;
+      }
+      elseif (strpos($k, 'contacts_parent_') === 0) {
+        [, , $cid] = explode('_', $k);
+        $parentContact[$cid] = $cid;
+      }
+    }
+
+    if (empty($childContacts)) {
+      $errors['additional_participants'] = ts('Select at least one child');
+    }
+    elseif (count($childContacts) != $fields['additional_participants']) {
+      CRM_Core_Error::debug_var('Validation Error', 'The child count and additional participant count are not the same. ID - ' . $currentContactID);
+      $errors['additional_participants'] = ts('We detected a validation issue; please enter your credit card details manually.');
     }
     //cycle through and remove required validation on all price fields
-    if (empty($eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']])) {
+    if ((isset($eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']]) &&
+        $eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']] == 0) ||
+      (isset($eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']]) &&
+        $eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']] == 1 && empty($parentContact))
+    ) {
       foreach ($form->_priceSet['fields'] as $fid => $val) {
         $form->setElementError('price_' . $fid, NULL);
         $fields['price_' . $fid] = NULL;
@@ -306,7 +339,23 @@ function eventinvite_civicrm_validateForm($formName, &$fields, &$files, &$form, 
 
       $form->_lineItem = [];
       $form->setElementError('_qf_default', NULL);
+      $session = CRM_Core_Session::singleton();
+      $session->set('event_skip_main_parent', TRUE);
     }
+    elseif (isset($eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']]) &&
+      $eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']] == 1) {
+      $session = CRM_Core_Session::singleton();
+      $session->set('event_skip_main_parent', FALSE);
+    }
+  }
+}
+
+function eventcustom_civicrm_customFieldOptions( $fieldID, &$options, $detailedFormat = false ) {
+  $customFields = CRM_Eventcustom_Utils::getCustomFields();
+  if (!empty($customFields['eventcustom_cf_relationship_types']['id'])
+    && $fieldID == $customFields['eventcustom_cf_relationship_types']['id']) {
+    $relationshipTypes = CRM_Eventcustom_Utils::relationshipTypes();
+    $options = $relationshipTypes;
   }
 }
 

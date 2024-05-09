@@ -127,11 +127,6 @@ class CRM_Eventcustom_Utils {
     $userID = $form->getLoggedInUserContactID();
     $eventId = $form->getVar('_eventId');
 
-    $result = civicrm_api3('Event', 'get', [
-      'id' => $eventId,
-    ]);
-    $eventDetails = $result['values'][$eventId];
-
     $primary_contact_params = [
       'version' => '3',
       'id' => $userID,
@@ -142,7 +137,7 @@ class CRM_Eventcustom_Utils {
     $group_members[$userID] = $civi_primary_contact;
 
     $customFields = CRM_Eventcustom_Utils::getCustomFields();
-    $customSettings = CRM_Eventcustom_Utils::getEventDetails($eid, $customFields['eventcustom_cf_relationship_types']['custom_n']);
+    $customSettings = CRM_Eventcustom_Utils::getEventDetails($eventId, $customFields);
     if (empty($customSettings[$customFields['eventcustom_cf_relationship_types']['custom_n']])) {
       return;
     }
@@ -152,7 +147,6 @@ class CRM_Eventcustom_Utils {
 
     // parents can only register for events that allow it
     $parents_can_register = self::canParentRegisterforEvent($eventId);
-
     foreach ($relationships as $r) {
       @ list($rType, $dir) = explode("_", $r, 2);
       if ($dir == NULL) {
@@ -193,7 +187,6 @@ class CRM_Eventcustom_Utils {
 
     //make it a unique list of contacts
     $contactIds = array_unique($contactIds);
-
     $returnField = ["display_name", "group"];
 
     $spouse_of_id = civicrm_api3('RelationshipType', 'getvalue', [
@@ -252,12 +245,11 @@ class CRM_Eventcustom_Utils {
         $group_members[$cid]['explanation'] = '';
       }
       else {
-        $group_members[$cid]['skip_registration'] = TRUE;
+        //$group_members[$cid]['skip_registration'] = TRUE;
         $group_members[$cid]['explanation'] = '';
       }
 
     }
-
     foreach ($group_members as $cid => $contactDetails) {
       if ($contactDetails['is_parent']) {
         if (!$parents_can_register && array_key_exists($cid, $group_members)) {
