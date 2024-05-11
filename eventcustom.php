@@ -207,7 +207,8 @@ function eventcustom_civicrm_buildForm($formName, &$form) {
     $canParentRegister = $parentCanRegister[$customFields['eventcustom_cg_primary_contact_register']['custom_n']];
     if ($formName == 'CRM_Event_Form_Registration_ThankYou') {
       $eid = $form->getVar('_eventId');
-      if (empty($canParentRegister)) {
+      $session = CRM_Core_Session::singleton();
+      if ($session->get('event_skip_main_parent')) {
         if ($form->getVar('_participantId')) {
           $result = civicrm_api3('ParticipantStatusType', 'getvalue', [
             'return' => "id",
@@ -224,7 +225,6 @@ function eventcustom_civicrm_buildForm($formName, &$form) {
     if (!$canParentRegister) {
       $template = CRM_Core_Smarty::singleton();
       $part = $template->get_template_vars('part');
-      echo '<pre>'; print_r($part); echo '</pre>';
       $part[0]['info'] .= ' ( Parent will be register as Non Attending Participant.)';
       $template->assign('part', $part);
     }
@@ -272,12 +272,12 @@ function eventcustom_civicrm_buildAmount($pageType, &$form, &$amounts) {
         if (array_key_exists($option_id, $getPriceSetsInfo)) {
           if ($formName == 'CRM_Event_Form_Registration_Register' &&
             !$parents_can_register) {
-            $option['amount'] = 0;
+            // $option['amount'] = 0;
           }
           elseif ($formName == 'CRM_Event_Form_Registration_Register' &&
             !empty($form->_submitValues) &&
             empty($form->_submitValues['contacts_parent_' . $currentContactID])) {
-            $option['amount'] = 0;
+            // $option['amount'] = 0;
           }
 
           // Re-calculate VAT/Sales TAX on discounted amount.
@@ -318,13 +318,14 @@ function eventcustom_civicrm_validateForm($formName, &$fields, &$files, &$form, 
         $parentContact[$cid] = $cid;
       }
     }
-
-    if (empty($childContacts)) {
-      $errors['additional_participants'] = ts('Select at least one child');
-    }
-    elseif (count($childContacts) != $fields['additional_participants']) {
-      CRM_Core_Error::debug_var('Validation Error', 'The child count and additional participant count are not the same. ID - ' . $currentContactID);
-      $errors['additional_participants'] = ts('We detected a validation issue; please enter your credit card details manually.');
+    if (in_array($formName, ['CRM_Event_Form_Registration_Register'])) {
+      if (empty($childContacts)) {
+        $errors['additional_participants'] = ts('Select at least one child');
+      }
+      elseif (count($childContacts) != $fields['additional_participants']) {
+        CRM_Core_Error::debug_var('Validation Error', 'The child count and additional participant count are not the same. ID - ' . $currentContactID);
+        $errors['additional_participants'] = ts('We detected a validation issue; please enter your credit card details manually.');
+      }
     }
     //cycle through and remove required validation on all price fields
     if ((isset($eventCustomDetails[$customFields['eventcustom_cg_primary_contact_register']['custom_n']]) &&
